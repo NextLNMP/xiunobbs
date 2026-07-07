@@ -6,6 +6,6 @@ CREATE TABLE bbs_queue (
   expiry int(11) unsigned NOT NULL default '0',		# 过期时间，默认 0，不过期
   UNIQUE KEY(queueid, v),
   KEY(expiry)
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 ALTER TABLE bbs_post ADD COLUMN quotepid int(11) NOT NULL default '0';
