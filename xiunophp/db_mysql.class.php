@@ -1,5 +1,6 @@
 <?php
 
+// Xiuno BBS 5.0: 本类由 mysql_* 扩展(PHP 7.0 移除)整体移植到 mysqli，接口与行为保持不变。
 class db_mysql {
 	
 	public $conf = array(); // 配置，可以支持主从
@@ -14,6 +15,8 @@ class db_mysql {
 	public $innodb_first = TRUE;// 优先 InnoDB
 	
 	public function __construct($conf) {
+		// PHP 8.1 起 mysqli 默认抛异常，恢复 4.x 的静默返回 FALSE 语义 (Xiuno BBS 5.0)
+		function_exists('mysqli_report') AND mysqli_report(MYSQLI_REPORT_OFF);
 		$this->conf = $conf;
 		$this->tablepre = $conf['master']['tablepre'];
 	}
@@ -51,9 +54,16 @@ class db_mysql {
 	}
 	
 	public function real_connect($host, $user, $password, $name, $charset = '', $engine = '') {
-		$link = @mysql_connect($host, $user, $password); // 如果用户名相同，则返回同一个连接。 fastcgi 持久连接更省资源
-		if(!$link) { $this->error(mysql_errno(), '连接数据库服务器失败:'.mysql_error()); return FALSE; }
-		if(!mysql_select_db($name, $link)) { $this->error(mysql_errno(), '选择数据库失败:'.mysql_error()); return FALSE; }
+		// mysql_connect 原生支持 host:port 写法，mysqli 需要拆开 (Xiuno BBS 5.0)
+		if(strpos($host, ':') !== FALSE) {
+			list($host, $port) = explode(':', $host);
+			$port = (int)$port;
+		} else {
+			$port = 3306;
+		}
+		$link = @mysqli_connect($host, $user, $password, '', $port);
+		if(!$link) { $this->error(mysqli_connect_errno(), '连接数据库服务器失败:'.mysqli_connect_error()); return FALSE; }
+		if(!@mysqli_select_db($link, $name)) { $this->error(mysqli_errno($link), '选择数据库失败:'.mysqli_error($link)); return FALSE; }
 		//strtolower($engine) == 'innodb' AND $this->query("SET innodb_flush_log_at_trx_commit=no", $link);
 		$charset AND $this->query("SET names $charset, sql_mode=''", $link);
 		return $link;
@@ -62,8 +72,8 @@ class db_mysql {
 		$query = $this->query($sql);
 		if(!$query) return $query;
 		// 如果结果为空，返回 FALSE
-		$r = mysql_fetch_assoc($query);
-		if($r === FALSE) {
+		$r = mysqli_fetch_assoc($query);
+		if(empty($r)) {
 			// $this->error();
 			return NULL;
 		}
@@ -75,7 +85,7 @@ class db_mysql {
 		$query = $this->query($sql);
 		if(!$query) return $query;
 		$arrlist = array();
-		while($arr = mysql_fetch_assoc($query)) {
+		while($arr = mysqli_fetch_assoc($query)) {
 			$key ? $arrlist[$arr[$key]] = $arr : $arrlist[] = $arr; // 顺序没有问题，尽管是数字，仍然是有序的，看来内部实现是链表，与 js 数组不同。
 		}
 		return $arrlist;
@@ -104,7 +114,7 @@ class db_mysql {
 			$link = $this->link = $this->rlink;
 		}
 		$t1 = microtime(1);
-		$query = mysql_query($sql, $link);
+		$query = mysqli_query($link, $sql);
 		$t2 = microtime(1);
 		if($query === FALSE) $this->error();
 		
@@ -131,7 +141,7 @@ class db_mysql {
 			}
 		}
 		$t1 = microtime(1);
-		$query = mysql_query($sql, $this->wlink);
+		$query = mysqli_query($this->wlink, $sql);
 		$t2 = microtime(1);
 		$t3 = substr($t2 - $t1, 0, 6);
 		
@@ -141,9 +151,9 @@ class db_mysql {
 		if($query !== FALSE) {
 			$pre = strtoupper(substr(trim($sql), 0, 7));
 			if($pre == 'INSERT ' || $pre == 'REPLACE') {
-				return mysql_insert_id($this->wlink);
+				return mysqli_insert_id($this->wlink);
 			} elseif($pre == 'UPDATE ' || $pre == 'DELETE ') {
-				return mysql_affected_rows($this->wlink);
+				return mysqli_affected_rows($this->wlink);
 			}
 		} else {
 			$this->error();
@@ -178,9 +188,10 @@ class db_mysql {
 	}
 	
 	public function close() {
-		$r = mysql_close($this->wlink);
+		$r = FALSE;
+		$this->wlink instanceof mysqli AND $r = mysqli_close($this->wlink);
 		if($this->wlink != $this->rlink) {
-			$r = mysql_close($this->rlink);
+			$this->rlink instanceof mysqli AND $r = mysqli_close($this->rlink);
 		}
 		return $r;
 	}
@@ -191,8 +202,9 @@ class db_mysql {
 	}
 	
 	public function error($errno = 0, $errstr = '') {
-		$this->errno = $errno ? $errno : ($this->link ? mysql_errno($this->link) : mysql_errno());
-		$this->errstr = $errstr ? $errstr : ($this->link ? mysql_error($this->link) : mysql_error());
+		$islink = $this->link instanceof mysqli;
+		$this->errno = $errno ? $errno : ($islink ? mysqli_errno($this->link) : mysqli_connect_errno());
+		$this->errstr = $errstr ? $errstr : ($islink ? mysqli_error($this->link) : mysqli_connect_error());
 		DEBUG AND trigger_error('Database Error:'.$this->errstr);
 	}
 	

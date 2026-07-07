@@ -59,7 +59,7 @@ class db_pdo_mysql {
 		try {
 			$attr = array(
 				PDO::ATTR_TIMEOUT => 5,
-				//PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+				PDO::ATTR_ERRMODE => PDO::ERRMODE_SILENT, // PHP 8.0 起 PDO 默认抛异常，恢复 4.x 静默语义 (Xiuno BBS 5.0)
 			);
 			$link = new PDO("mysql:host=$host;port=$port;dbname=$name", $user, $password, $attr);
 			//$link->setAttribute(PDO::ATTR_TIMEOUT, 5);

@@ -137,10 +137,10 @@ if(empty($action)) {
         if($r === FALSE) {
             if($errno == 1049 || $errno == 1045) {
                 if($type == 'mysql') {
-                    mysql_query("CREATE DATABASE $name");
+                    if(strpos($host, ':') !== FALSE) { list($mhost, $mport) = explode(':', $host); } else { $mhost = $host; $mport = 3306; } $mlink = @mysqli_connect($mhost, $user, $password, '', (int)$mport); if($mlink) { @mysqli_query($mlink, "CREATE DATABASE `$name`"); mysqli_close($mlink); } // mysql_* 已移除，改用 mysqli (Xiuno BBS 5.0)
                     $r = db_connect($db);
                 } elseif($type == 'pdo_mysql') {
-                    if(strpos(':', $host) !== FALSE) {
+                    if(strpos($host, ':') !== FALSE) {
                         $arr = explode(':', $host);
                         $host = $arr[0];
                         $port = $arr[1];
@@ -151,7 +151,7 @@ if(empty($action)) {
                     try {
                         $attr = array(
                             PDO::ATTR_TIMEOUT => 5,
-                            //PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+                            PDO::ATTR_ERRMODE => PDO::ERRMODE_SILENT, // PHP 8.0 起 PDO 默认抛异常，恢复 4.x 静默语义 (Xiuno BBS 5.0)
                         );
                         $link = new PDO("mysql:host=$host;port=$port", $user, $password, $attr);
                         $r = $link->exec("CREATE DATABASE `$name`");
