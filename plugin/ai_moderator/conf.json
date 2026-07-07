@@ -1,0 +1,9 @@
+{
+	"dir": "ai_moderator",
+	"name": "AI 版主",
+	"brief": "填一个 API，版主自动上岗：发帖回帖实时判定，删有理由、判有留痕、API 挂了放行不误站。",
+	"version": "0.1.0",
+	"icon": "",
+	"installed": 0,
+	"enable": 0
+}
