@@ -1,65 +1,72 @@
-### 【Xiuno BBS 4.0 是什么？】
-Xiuno BBS 4.0 是一款轻论坛产品，前端基于 BootStrap 4.0、JQuery 3，后端基于 PHP/7 MySQL XCache/Yac/Redis/Memcached...
+# Xiuno BBS 5.0 · 修罗轻论坛社区延续版
 
-自适应手机、平板、PC，有着非常方便的插件机制，不仅仅是一个轻论坛，还是一个良好的二次开发平台。
+> 从老黄 2020 年留下的最后遗作 4.0.4 出发，把国产轻论坛的巅峰之作，迭代到 AI 时代。
 
-git： https://git.oschina.net/xiuno/xiunobbs.git
+[English version below.](#english)
 
-### 【Xiuno BBS 4.0 带来了什么？】
-前端采用 BootStrap 4 + JQuery 3，响应式布局，自适应手机，平板，PC 设备，不再需要单独开发移动版本。
+## 这是什么
 
-对 Bootstrap 4 进行了增强和兼容，比如增加 $('#submit').button('xxx').delay(3000).location('xxx.php') 的连续操作支持。
+Xiuno BBS（修罗轻论坛）是 2016 年诞生的国产轻论坛，以极致轻量著称：95 个 PHP 文件、约 2.3 万行代码、17 张数据表、9 个路由文件，单次请求 0.01 秒级，作者称它为"一辆纯手工打造的法拉利"。
 
-xiuno.js 采用了 xn. 命名空间，不再担心 js 命名冲突，完善了对常用的 php 函数的实现。
+2020 年 7 月 6 日，作者老黄关闭官网 bbs.xiuno.com，只留下一句"国内什么时候有真正的开源环境了再见!"。代码仓库、插件市场与配套电子书随之消失，此后六年再无真正的继任者。
 
-增加了通用的 $.each_sync() 方法，从客户端避免 ajax 并发导致的服务端并发写数据问题，简化了服务端逻辑。
+Xiuno BBS 4.0 以 MIT 协议发布，允许自由修改、派生与商用。本仓库是它的社区延续版：先原样存档，再修复到现代 PHP，最后把它带进 AI 时代。
 
-不再支持 IE89 和以下版本，全面拥抱移动端，不用再用琢磨恶心的 css hack。
+## 仓库结构
 
-不再强制要求 URL-Rewrite， 采用相对路径的 URL 格式，方便部署到子目录：user-login.htm
+- `v4.0.4` 标签：官方最终版原始基线，原封不动，用于存档与考古
+- `main` 分支：社区延续版主线
+- `v5.0-dev` 分支：5.0 开发线
+- `README-original.md`：老黄的原版说明，完整保留
 
-图片缩略、裁切放到了客户端，不再依赖服务端 GD 库（不再担心各种 GD 漏洞和弱点）。
+## 5.0 路线图
 
-同时支持 Session 和 Token 方式登录，可以全站返回 json 数据，方便 APP 开发。
+### Phase 1 · 经典复活（v5.0-alpha）
 
-插件机制采用 hook + overwrite 方式，方便插入，和覆盖，非常方便二次开发，并且不影响性能，不影响编译。
+- PHP 8.4+ 全兼容，清理 `each()`、`get_magic_quotes` 等历史遗留
+- 数据库字符集升级 utf8mb4，原生支持 emoji
+- 安全审计，`eval` 使用点逐一复查
+- 原味 UI 保留，17 张表结构不动，存量老站无损升级
 
-db 层采用了更加方便的接口，可以同时支持 SQL 和 NoSQL 的方式操作数据（提倡 NoSQL)。
+### Phase 2 · 时代层（v5.0）
 
-论坛功能上更加的精简，更多功能采用插件的方式进行扩充。
+全部以插件实现，零内核侵入：
 
-引入了语言包，自带简体、繁体、英文三个版本。
+- **MCP 接口**：AI Agent 可读帖、发帖、管版，论坛成为人与 AI 共同的社区
+- **I-Lang 输出层**：每个帖子对 AI 原生可读（[ilang.ai](https://ilang.ai)）
+- **AI 审核插件**：内容合规自动化
+- **SQLite 模式**：激活内核自带的 `db_pdo_sqlite` 驱动，单机零依赖建站
 
-插件中心正式开启，开发者可以入驻，开发收费插件。
+## 设计铁律
 
-只需要一个博客插件，它就可以变成一个功能强大的博客。
+内核永远保持修罗哲学：轻、快、无赘肉。新能力一律插件化，插件机制本身就是修罗的魂。
 
-帖子支持 txt html markdown 三种格式，自带适度整合的 UMEditor 插件，修正了 UM 在 Bootstrap 4 下的很多问题。
+## 协议与致谢
 
-xiunophp 4.0 这个框架合并成了一个文件 xiunophp.min.php，只需要一个 include 就可以开始使用里面提供的方便的函数和全局变量。
+MIT 协议延续，老黄的原始版权信息完整保留于 `LICENSE.txt`，社区延续部分同样以 MIT 发布。
 
-Xiuno BBS 4 正式版经历了近 2 年，7 个 beta 版本，最终定型，这可能是最后一个大版本，放心动手二次开发吧。
+致敬老黄。一辆纯手工打造的法拉利，不应该锈在车库里。
 
+## 相关生态
 
-### 【性能方面】
-采用静态语言编程风格，充分发挥 PHP7 OPCache 的威力。
+- [NextLNMP](https://nextlnmp.cn)：面向站长的一键 LNMP 环境
+- [I-Lang](https://ilang.ai)：AI 时代的通信协议
 
-专门针对 BBS 业务的索引优化和适度的缓存。
+---
 
-大量的运算放到了客户端，并发问题尽量由客户端控制。
+## English
 
-作者十多年从业经验带领您绕过雷区。
+**Xiuno BBS** is a legendary ultra-light Chinese PHP forum born in 2016: 95 PHP files, ~23k lines of code, 17 database tables, 9 route files, 0.01s per request. The author called it "a handcrafted Ferrari".
 
-### 【授权】
-Xiuno BBS 4.0 采用 MIT 协议发布，您可以自由修改、派生版本、商用而不用担心任何法律风险（修改后应保留原来的版权信息）。
+In July 2020 the author shut everything down: the official site, the repositories, the plugin market and the ebooks. Released under the MIT license, Xiuno BBS allows free modification, derivation and commercial use. This repository is the community continuation.
 
-我们承诺对主程序永远免费，在没有盈利前接受正派人士的捐赠。
+**Repository layout**: the `v4.0.4` tag is the untouched final official release, archived for the record; `main` is the continuation line; `v5.0-dev` is where 5.0 happens; the original README is preserved as `README-original.md`.
 
-### 【站长交流群】
-474834730
+**Roadmap**:
 
-### 【开发者群】
-2759536
+- **Phase 1, Classic Revival (v5.0-alpha)**: full PHP 8.4+ compatibility, utf8mb4 with emoji support, security audit of every `eval` call, original UI preserved, schema untouched so existing sites upgrade losslessly.
+- **Phase 2, The AI Era Layer (v5.0)**, implemented purely as plugins with zero core intrusion: an **MCP interface** so AI agents can read, post and moderate; an **I-Lang output layer** making every thread natively machine-readable ([ilang.ai](https://ilang.ai)); an **AI moderation plugin**; and a **SQLite mode** activating the built-in `db_pdo_sqlite` driver for zero-dependency single-box deployment.
 
-axiuno@gmail.com
-2018/1/17
+**Design law**: the core stays true to the Xiuno philosophy, light, fast, no fat. Everything new ships as a plugin, because the plugin system is the soul of Xiuno.
+
+MIT licensed. The original copyright notice is fully preserved in `LICENSE.txt`. In memory of the original author: a handcrafted Ferrari should not rust in the garage.
