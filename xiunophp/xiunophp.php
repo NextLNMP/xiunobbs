@@ -17,7 +17,7 @@
 function_exists('ini_set') AND ini_set('display_errors', DEBUG ? '1' : '0');
 error_reporting(DEBUG ? E_ALL : 0);
 version_compare(PHP_VERSION, '5.3.0', '<') AND set_magic_quotes_runtime(0);
-$get_magic_quotes_gpc = version_compare(PHP_VERSION, '5.4.0', '<') ? get_magic_quotes_gpc() : FALSE;
+$get_magic_quotes_gpc = FALSE; // magic_quotes_gpc 自 PHP 5.4 废除、8.0 移除 (Xiuno BBS 5.0)
 $starttime = microtime(1);
 $time = time();
 

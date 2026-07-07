@@ -1,0 +1,17 @@
+# runtime artifacts / 运行时产物
+conf/conf.php
+install/install.lock
+log/*
+!log/.gitkeep
+tmp/*
+!tmp/.gitkeep
+upload/tmp/*
+!upload/tmp/.gitkeep
+upload/attach/*
+!upload/attach/.gitkeep
+upload/avatar/*
+!upload/avatar/.gitkeep
+upload/forum/*
+!upload/forum/.gitkeep
+.DS_Store
+Thumbs.db
