@@ -1,0 +1,16 @@
+<footer class="text-muted small bg-dark py-4 mt-1 mt-lg-3" id="footer">
+	<div class="container">
+		<div class="row">
+			<div class="col">
+				<!--{hook footer_footer_left_start.htm}-->
+				© <?php echo date('Y', time());?> <a href="<?php echo http_url_path();?>" class="text-muted"><b><?php echo $conf['sitename'];?></b></a>
+				<!--{hook footer_footer_left_end.htm}-->
+			</div>
+			<div class="col text-right">
+				<!--{hook footer_footer_right_start.htm}-->
+				<span class="hidden-sm">| 加载: <?php echo substr(microtime(1) - $starttime, 0, 5);?> | SQL: <?php echo count($db->sqls);?></span>
+				<!--{hook footer_footer_right_end.htm}-->
+			</div>
+		</div>
+	</div>
+</footer>
