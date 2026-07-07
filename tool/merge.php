@@ -1,28 +1,40 @@
 <?php
 // 合并 XiunoPHP
+// Xiuno BBS 5.0: 原版用 substr(8, -2) 魔数剥离首尾标签，对文件头字节数敏感，一改行尾风格就断。
+// 改为逐文件正则剥离开头与结尾的 PHP 标签，行为等价且健壮。
 
 function_exists('set_magic_quotes_runtime') AND set_magic_quotes_runtime(0);
 $dir = '../xiunophp/';
 
+function xn_strip($file) {
+	$s = php_strip_whitespace($file);
+	$s = preg_replace('#^<\?php\s*#', '', $s);
+	$s = preg_replace('#\?>\s*$#', '', $s);
+	return trim($s);
+}
 
-$s = php_strip_whitespace($dir.'db_mysql.class.php');
-$s .= php_strip_whitespace($dir.'db_pdo_mysql.class.php');
-$s .= php_strip_whitespace($dir.'db_pdo_sqlite.class.php');
-$s .= php_strip_whitespace($dir.'cache_apc.class.php');
-$s .= php_strip_whitespace($dir.'cache_memcached.class.php');
-$s .= php_strip_whitespace($dir.'cache_mysql.class.php');
-$s .= php_strip_whitespace($dir.'cache_redis.class.php');
-$s .= php_strip_whitespace($dir.'cache_xcache.class.php');
-$s .= php_strip_whitespace($dir.'cache_yac.class.php');
+$files = array(
+	'db_mysql.class.php',
+	'db_pdo_mysql.class.php',
+	'db_pdo_sqlite.class.php',
+	'cache_apc.class.php',
+	'cache_memcached.class.php',
+	'cache_mysql.class.php',
+	'cache_redis.class.php',
+	'cache_xcache.class.php',
+	'cache_yac.class.php',
+	'db.func.php',
+	'cache.func.php',
+	'image.func.php',
+	'array.func.php',
+	'xn_encrypt.func.php',
+	'misc.func.php',
+);
 
-$s .= php_strip_whitespace($dir.'db.func.php');
-$s .= php_strip_whitespace($dir.'cache.func.php');
-$s .= php_strip_whitespace($dir.'image.func.php');
-$s .= php_strip_whitespace($dir.'array.func.php');
-$s .= php_strip_whitespace($dir.'xn_encrypt.func.php');
-$s .= php_strip_whitespace($dir.'misc.func.php');
-
-$s = substr($s, 8, -2);
+$s = '';
+foreach($files as $file) {
+	$s .= xn_strip($dir.$file)."\r\n";
+}
 
 $xiunophp = file_get_contents($dir.'xiunophp.php');
 $before = '// hook xiunophp_include_before.php';
@@ -30,18 +42,6 @@ $after = '// hook xiunophp_include_after.php';
 $pre = substr($xiunophp, 0, strpos($xiunophp, $before) + 1 + strlen($before));
 $suffix = substr($xiunophp, strpos($xiunophp, $after));
 $xiunophp_min = trim($pre)."\r\n\r\n".trim($s)."\r\n\r\n".trim($suffix);
-
-//echo $xiunophp_min;exit;
-/*
-$p = '#//\shook\sxiunophp_include_before\.php(.*?)//\shook\sxiunophp_include_after\.php#ism';
-$xiunophp_min = preg_replace($p, $s, $xiunophp);
-*/
-
-/*
-$xiunophp_min = preg_replace(
-'#//\shook\sxiunophp_include_before\.php(.*)//\shook\sxiunophp_include_after\.php#ism', 
-'//\shook\sxiunophp_include_before.php'.$s.'//\shook\sxiunophp_include_after.php', 
-$xiunophp);*/
 
 file_put_contents($dir.'xiunophp.min.php', $xiunophp_min);
 
