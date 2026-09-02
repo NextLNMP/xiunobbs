@@ -107,7 +107,9 @@ if(empty($action) || $action == 'list') {
 	
 // 操作
 } elseif($action == 'operation') {
-		
+
+	$method != 'POST' AND message(-1, 'Method Error'); // 改状态动作只认 POST
+
 	$queueid = _SESSION('thread_find_queueid');
 	empty($queueid) AND message(-1, lang('thread_queue_not_exists'));
 	

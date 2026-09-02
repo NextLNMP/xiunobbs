@@ -2,6 +2,18 @@
 
 !defined('DEBUG') AND exit('Access Denied.');
 
+// POST 请求校验 Origin/Referer 的 host 与本站一致，防跨站请求；两者都缺省则放行，兼容 API 客户端
+function check_post_origin() {
+	if($_SERVER['REQUEST_METHOD'] != 'POST') return;
+	$from = _SERVER('HTTP_ORIGIN');
+	empty($from) AND $from = _SERVER('HTTP_REFERER');
+	if(empty($from)) return;
+	$host = parse_url($from, PHP_URL_HOST);
+	$port = parse_url($from, PHP_URL_PORT);
+	$port AND $host .= ':'.$port;
+	$host != _SERVER('HTTP_HOST') AND message(-1, 'request origin invalid');
+}
+
 // hook index_inc_start.php
 
 $sid = sess_start();
@@ -42,6 +54,9 @@ $runtime = runtime_init();
 
 // 检测站点运行级别 / restricted access
 check_runlevel();
+
+// 跨站 POST 拦截，前后台共用（后台经由本文件进入）
+check_post_origin();
 
 // 全站的设置数据，站点名称，描述，关键词
 // $setting = kv_get('setting');

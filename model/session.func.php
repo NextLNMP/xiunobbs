@@ -54,7 +54,7 @@ function sess_read($sid) {
 function sess_new($sid) {
 	global $time, $longip, $conf, $g_session, $g_session_invalid;
 	
-	$agent = _SERVER('HTTP_USER_AGENT');
+	$agent = mb_substr(_SERVER('HTTP_USER_AGENT'), 0, 500, 'UTF-8'); // 列宽 varchar(500)，超长 UA 头在严格模式下会撑爆插入
 	
 	// 干掉同 ip 的 sid，仅仅在遭受攻击的时候
 	//db_delete('session', array('ip'=>$longip));
@@ -124,7 +124,7 @@ function sess_write($sid, $data) {
 	function_exists('chdir') AND chdir(APP_PATH);
 	
 	$url = _SERVER('REQUEST_URI_NO_PATH');
-	$agent = _SERVER('HTTP_USER_AGENT');
+	$agent = mb_substr(_SERVER('HTTP_USER_AGENT'), 0, 500, 'UTF-8'); // 列宽 varchar(500)，超长 UA 头在严格模式下会撑爆插入
 	$arr = array(
 		'uid'=>$uid,
 		'fid'=>$fid,
@@ -184,6 +184,22 @@ function sess_gc($maxlifetime) {
 	return TRUE; 
 }
 
+// PHP 8.4 起六参 session_set_save_handler 废弃，改用对象注册，方法体仍走原有 sess_* 函数
+class sess_handler implements SessionHandlerInterface {
+	#[ReturnTypeWillChange]
+	public function open($save_path, $session_name) { return sess_open($save_path, $session_name); }
+	#[ReturnTypeWillChange]
+	public function close() { return sess_close(); }
+	#[ReturnTypeWillChange]
+	public function read($sid) { return sess_read($sid); }
+	#[ReturnTypeWillChange]
+	public function write($sid, $data) { return sess_write($sid, $data); }
+	#[ReturnTypeWillChange]
+	public function destroy($sid) { return sess_destroy($sid); }
+	#[ReturnTypeWillChange]
+	public function gc($maxlifetime) { return sess_gc($maxlifetime); }
+}
+
 function sess_start() {
 	global $conf, $sid, $g_session;
 	ini_set('session.name', 'bbs_sid');
@@ -192,15 +208,16 @@ function sess_start() {
 	ini_set('session.use_only_cookies', 'On');
 	ini_set('session.cookie_domain', '');
 	ini_set('session.cookie_path', '');	// 为空则表示当前目录和子目录
-	ini_set('session.cookie_secure', 'Off'); // 打开后，只有通过 https 才有效。
+	ini_set('session.cookie_secure', xn_is_https() ? 'On' : 'Off'); // 按 HTTPS 自动（含 X-Forwarded-Proto），打开后只有通过 https 才有效。
 	ini_set('session.cookie_lifetime', 8640000);
 	ini_set('session.cookie_httponly', 'On'); // 打开后 js 获取不到 HTTP 设置的 cookie, 有效防止 XSS，这个对于安全很重要，除非有 BUG，否则不要关闭。
+	ini_set('session.cookie_samesite', 'Lax');
 	
 	ini_set('session.gc_maxlifetime', $conf['online_hold_time']);	// 活动时间 $conf['online_hold_time']
 	ini_set('session.gc_probability', 1); 	// 垃圾回收概率 = gc_probability/gc_divisor
 	ini_set('session.gc_divisor', 500); 	// 垃圾回收时间 5 秒，在线人数 * 10 
 	
-	session_set_save_handler('sess_open', 'sess_close', 'sess_read', 'sess_write', 'sess_destroy', 'sess_gc'); 
+	session_set_save_handler(new sess_handler(), FALSE); // shutdown 用下面手工注册的 session_write_close
 	
 	// register_shutdown_function 会丢失当前目录，需要 chdir(APP_PATH)
 	

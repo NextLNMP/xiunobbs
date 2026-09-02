@@ -16,7 +16,6 @@
 
 function_exists('ini_set') AND ini_set('display_errors', DEBUG ? '1' : '0');
 error_reporting(DEBUG ? E_ALL : 0);
-version_compare(PHP_VERSION, '5.3.0', '<') AND set_magic_quotes_runtime(0);
 $get_magic_quotes_gpc = FALSE; // magic_quotes_gpc 自 PHP 5.4 废除、8.0 移除 (Xiuno BBS 5.0)
 $starttime = microtime(1);
 $time = time();
@@ -85,7 +84,7 @@ date_default_timezone_set($conf['timezone']);
 !empty($_SERVER['HTTP_X_REWRITE_URL']) AND $_SERVER['REQUEST_URI'] = $_SERVER['HTTP_X_REWRITE_URL'];
 !isset($_SERVER['REQUEST_URI']) AND $_SERVER['REQUEST_URI'] = '';
 $_SERVER['REQUEST_URI'] = str_replace('/index.php?', '/', $_SERVER['REQUEST_URI']); // 兼容 iis6
-$_REQUEST = array_merge($_COOKIE, $_POST, $_GET, xn_url_parse($_SERVER['REQUEST_URI']));
+$_REQUEST = array_merge($_POST, $_GET, xn_url_parse($_SERVER['REQUEST_URI'])); // 不合并 $_COOKIE，避免 cookie 冒充请求参数
 
 // IP 地址
 !isset($_SERVER['REMOTE_ADDR']) AND $_SERVER['REMOTE_ADDR'] = '';

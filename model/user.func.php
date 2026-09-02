@@ -319,7 +319,8 @@ function user_token_get() {
 // 用户
 function user_token_get_do() {
 	global $time, $ip, $conf;
-	$token = param('bbs_token');
+	$token = _COOKIE('bbs_token');
+	empty($token) AND $token = param('bbs_token'); // 兼容 APP 以参数传 token
 	
 	// hook model_user_token_get_do_start.php
 	
@@ -328,7 +329,11 @@ function user_token_get_do() {
 	$s = xn_decrypt($token, $tokenkey);
 	if(empty($s)) return FALSE;
 	$arr = explode("\t", $s);
-	if(count($arr) != 4) return FALSE;
+	if(count($arr) != 5) return FALSE;
+	// 先验 HMAC 再解字段
+	$_hmac = array_pop($arr);
+	$s = implode("\t", $arr);
+	if(!hash_equals(substr(hash_hmac('sha256', $s, md5($conf['auth_key'].'#tokmac')), 0, 16), $_hmac)) return FALSE;
 	list($_ip, $_time, $_uid, $_pwd) = $arr;
 	//if($ip != $_ip) return FALSE;
 	//if($time - $_time > 86400) return FALSE;
@@ -353,7 +358,7 @@ function user_token_set($uid) {
 	global $time, $conf;
 	if(empty($uid)) return;
 	$token = user_token_gen($uid);
-	setcookie('bbs_token', $token, $time + 8640000, $conf['cookie_path']);
+	setcookie('bbs_token', $token, array('expires'=>$time + 8640000, 'path'=>$conf['cookie_path'], 'secure'=>xn_is_https(), 'httponly'=>TRUE, 'samesite'=>'Lax'));
 	
 	// hook model_user_token_set_end.php
 }
@@ -373,7 +378,9 @@ function user_token_gen($uid) {
 	$user = user_read($uid);
 	$pwd = md5($user['password']);
 	$tokenkey = md5(xn_key());
-	$token = xn_encrypt("$ip	$time	$uid	$pwd", $tokenkey);
+	$s = "$ip	$time	$uid	$pwd";
+	$s .= "\t".substr(hash_hmac('sha256', $s, md5($conf['auth_key'].'#tokmac')), 0, 16);
+	$token = xn_encrypt($s, $tokenkey);
 	
 	// hook model_user_token_gen_end.php
 	

@@ -5,6 +5,19 @@
 // 有部分用户
 define('XN_ADMIN_BIND_IP', array_value($conf, 'admin_bind_ip'));
 
+// 改状态的 GET 动作防跨站：现代浏览器跨站导航必带 Sec-Fetch-Site: cross-site 且页面无法伪造；老浏览器退回 Referer 校验
+function admin_check_samesite() {
+	$sfs = strtolower(_SERVER('HTTP_SEC_FETCH_SITE'));
+	$sfs == 'cross-site' AND message(-1, 'request origin invalid');
+	$referer = _SERVER('HTTP_REFERER');
+	if($referer) {
+		$host = parse_url($referer, PHP_URL_HOST);
+		$port = parse_url($referer, PHP_URL_PORT);
+		$port AND $host .= ':'.$port;
+		$host != _SERVER('HTTP_HOST') AND message(-1, 'request origin invalid');
+	}
+}
+
 function admin_token_check() {
 	global $longip, $time, $useragent, $conf;
 	$useragent_md5 = md5($useragent);
@@ -13,8 +26,10 @@ function admin_token_check() {
 	$key = md5((XN_ADMIN_BIND_IP ? $longip : '').$useragent_md5.xn_key());
 	
 	// hook admin_token_check_start.php
-	
-	$admin_token = param('bbs_admin_token');
+
+	// 只认 cookie 与 POST，不认 GET，防止令牌进访问日志
+	$admin_token = _COOKIE('bbs_admin_token');
+	empty($admin_token) AND $admin_token = _POST('bbs_admin_token');
 	if(empty($admin_token)) {
 		$_REQUEST[0] = 'index';
 		$_REQUEST[1] = 'login';
@@ -51,12 +66,13 @@ function admin_token_set() {
 	$key = md5((XN_ADMIN_BIND_IP ? $longip : '').$useragent_md5.xn_key());
 	
 	// hook admin_token_set_start.php
-	
-	$admin_token = param('bbs_admin_token');
+
+	$admin_token = _COOKIE('bbs_admin_token');
+	empty($admin_token) AND $admin_token = _POST('bbs_admin_token');
 	$s = "$longip	$time";
-	
+
 	$admin_token = xn_encrypt($s, $key);
-	setcookie('bbs_admin_token', $admin_token, $time + 3600, '',  '', 0, TRUE);
+	setcookie('bbs_admin_token', $admin_token, array('expires'=>$time + 3600, 'secure'=>xn_is_https(), 'httponly'=>TRUE, 'samesite'=>'Lax'));
 	
 	// hook admin_token_set_end.php
 }

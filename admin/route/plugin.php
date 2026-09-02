@@ -14,6 +14,9 @@ plugin_env_check();
 
 empty($action) AND $action = 'local';
 
+// 改状态动作由 GET 链接触发，SameSite=Lax 挡不住顶层导航，按 Sec-Fetch-Site/Referer 校验同站
+in_array($action, array('install', 'unstall', 'enable', 'disable', 'upgrade')) AND admin_check_samesite();
+
 if($action == 'local') {
 	
 	// 本地插件 local plugin list
