@@ -3369,7 +3369,14 @@ function xn_send_mail($smtp, $username, $email, $subject, $message, $charset = '
 	$mail->Password   = $smtp['pass'];        // SMTP account password
 	$mail->Timeout    = 5;	// 
 	$mail->CharSet    = $charset;
-  // $mail->SMTPSecure = "ssl"; // ssl tls
+	if(strpos($smtp['host'],'ssl://') !== false) {
+		$mail->Host       = str_replace('ssl://','',$smtp['host']);
+		$mail->SMTPSecure = "ssl";
+	} elseif($smtp['port'] == 465) {
+		$mail->SMTPSecure = "ssl";
+	} elseif($smtp['port'] == 587) {
+		$mail->SMTPSecure = "tls";
+	}
 	$mail->Encoding   = 'base64';
 	
 	//$subject = $charset == 'UTF-8' ? iconv('UTF-8', 'GBK', $subject) : $subject;
@@ -3381,7 +3388,6 @@ function xn_send_mail($smtp, $username, $email, $subject, $message, $charset = '
 	$mail->AddReplyTo($smtp['email'], $email);
 	$mail->Subject    = $subject;
 	$mail->AltBody    = $message; // optional, comment out and test
-	$message          = str_replace("\\",'',$message);
 	$mail->MsgHTML($message);
 	
 	$mail->AddAddress($email, $username);
