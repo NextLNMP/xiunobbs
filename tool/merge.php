@@ -1,9 +1,11 @@
 <?php
+
+php_sapi_name() != 'cli' AND exit('cli only');
+
 // 合并 XiunoPHP
 // Xiuno BBS 5.0: 原版用 substr(8, -2) 魔数剥离首尾标签，对文件头字节数敏感，一改行尾风格就断。
 // 改为逐文件正则剥离开头与结尾的 PHP 标签，行为等价且健壮。
 
-function_exists('set_magic_quotes_runtime') AND set_magic_quotes_runtime(0);
 $dir = '../xiunophp/';
 
 function xn_strip($file) {

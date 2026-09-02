@@ -15,6 +15,8 @@ function form_radio($name, $arr, $checked = 0) {
 
 	foreach((array)$arr as $k=>$v) {
 		$add = $k == $checked ? ' checked="checked"' : '';
+		$k = htmlspecialchars($k, ENT_QUOTES, 'UTF-8', FALSE); // double_encode=false 避免二次转义
+		$v = htmlspecialchars($v, ENT_QUOTES, 'UTF-8', FALSE);
 		$s .= "<label class=\"custom-input custom-radio\"><input type=\"radio\" name=\"$name\" value=\"$k\"$add /> $v</label> &nbsp; \r\n";
 	}
 	return $s;
@@ -22,6 +24,8 @@ function form_radio($name, $arr, $checked = 0) {
 
 function form_checkbox($name, $checked = 0, $txt = '', $val = 1) {
 	$add = $checked ? ' checked="checked"' : '';
+	$txt = htmlspecialchars($txt, ENT_QUOTES, 'UTF-8', FALSE);
+	$val = htmlspecialchars($val, ENT_QUOTES, 'UTF-8', FALSE);
 	$s = "<label class=\"custom-input custom-checkbox mr-4\"><input type=\"checkbox\" name=\"$name\" value=\"$val\" $add /> $txt</label>";
 	return $s;
 }
@@ -51,6 +55,8 @@ function form_options($arr, $checked = 0) {
 	$s = '';
 	foreach((array)$arr as $k=>$v) {
 		$add = $k == $checked ? ' selected="selected"' : '';
+		$k = htmlspecialchars($k, ENT_QUOTES, 'UTF-8', FALSE);
+		$v = htmlspecialchars($v, ENT_QUOTES, 'UTF-8', FALSE);
 		$s .= "<option value=\"$k\"$add>$v</option> \r\n";
 	}
 	return $s;
@@ -62,11 +68,13 @@ function form_text($name, $value, $width = FALSE, $holdplacer = '') {
 		is_numeric($width) AND $width .= 'px';
 		$style = " style=\"width: $width\"";
 	}
+	$value = htmlspecialchars($value, ENT_QUOTES, 'UTF-8', FALSE);
 	$s = "<input type=\"text\" name=\"$name\" id=\"$name\" placeholder=\"$holdplacer\" value=\"$value\" class=\"form-control\"$style />";
 	return $s;
 }
 
 function form_hidden($name, $value) {
+	$value = htmlspecialchars($value, ENT_QUOTES, 'UTF-8', FALSE);
 	$s = "<input type=\"hidden\" name=\"$name\" id=\"$name\" value=\"$value\" />";
 	return $s;
 }
@@ -78,6 +86,7 @@ function form_textarea($name, $value, $width = FALSE,  $height = FALSE) {
 		is_numeric($height) AND $height .= 'px';
 		$style = " style=\"width: $width; height: $height; \"";
 	}
+	$value = htmlspecialchars($value, ENT_QUOTES, 'UTF-8', FALSE);
 	$s = "<textarea name=\"$name\" id=\"$name\" class=\"form-control\" $style>$value</textarea>";
 	return $s;
 }
@@ -88,6 +97,7 @@ function form_password($name, $value, $width = FALSE) {
 		is_numeric($width) AND $width .= 'px';
 		$style = " style=\"width: $width\"";
 	}
+	$value = htmlspecialchars($value, ENT_QUOTES, 'UTF-8', FALSE);
 	$s = "<input type=\"password\" name=\"$name\" id=\"$name\" class=\"form-control\" value=\"$value\" $style />";
 	return $s;
 }
@@ -98,6 +108,7 @@ function form_time($name, $value, $width = FALSE) {
 		is_numeric($width) AND $width .= 'px';
 		$style = " style=\"width: $width\"";
 	}
+	$value = htmlspecialchars($value, ENT_QUOTES, 'UTF-8', FALSE);
 	$s = "<input type=\"text\" name=\"$name\" id=\"$name\" class=\"form-control\" value=\"$value\" $style />";
 	return $s;
 }

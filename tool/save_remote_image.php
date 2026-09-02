@@ -1,5 +1,7 @@
 <?php
 
+php_sapi_name() != 'cli' AND exit('cli only');
+
 /*
 	Xiuno BBS 4.0 本地化图片程序
 	

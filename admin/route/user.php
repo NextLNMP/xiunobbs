@@ -11,7 +11,8 @@ if(empty($action) || $action == 'list') {
         
     $pagesize = 20;
     $srchtype = param(2);
-    $keyword  = trim(xn_urldecode(param(3)));
+    $keyword_raw = trim(xn_urldecode(param(3))); // 查询与 urlencode 用原始值，模板输出用转义值
+    $keyword  = htmlspecialchars($keyword_raw, ENT_QUOTES, 'UTF-8');
     $page     = param(4, 1);
 
     // hook admin_user_list_start.php
@@ -21,16 +22,16 @@ if(empty($action) || $action == 'list') {
     
     // hook admin_user_list_allow_type_after.php
     
-    if($keyword) {
+    if($keyword_raw) {
         !in_array($srchtype, $allowtype) AND $srchtype = 'uid';
-        $cond[$srchtype] = $srchtype == 'create_ip' ? sprintf('%u', ip2long($keyword)) : $keyword; 
+        $cond[$srchtype] = $srchtype == 'create_ip' ? sprintf('%u', ip2long($keyword_raw)) : $keyword_raw;
     }
 
     // hook admin_user_list_cond_after.php
     $n = user_count($cond);
     $userlist = user_find($cond, array('uid'=>-1), $page, $pagesize);
-    $pagination = pagination(url("user-list-$srchtype-".urlencode($keyword).'-{page}'), $n, $page, $pagesize);
-    $pager = pager(url("user-list-$srchtype-".urlencode($keyword).'-{page}'), $n, $page, $pagesize);
+    $pagination = pagination(url("user-list-$srchtype-".urlencode($keyword_raw).'-{page}'), $n, $page, $pagesize);
+    $pager = pager(url("user-list-$srchtype-".urlencode($keyword_raw).'-{page}'), $n, $page, $pagesize);
 
     foreach ($userlist as &$_user) {
         $_user['group'] = array_value($grouplist, $_user['gid'], '');

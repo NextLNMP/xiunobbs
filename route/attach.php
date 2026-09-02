@@ -34,7 +34,13 @@ if(empty($action) || $action == 'create') {
 	$ext = file_ext($name, 7);
 	$filetypes = include APP_PATH.'conf/attach.conf.php';
 	!in_array($ext, $filetypes['all']) AND $ext = '_'.$ext;
-	
+
+	// 图片后缀的数据落盘前按内容校验（浏览器会把 bmp/webp 转成 png 提交，按嗅探结果为准）
+	if(in_array($ext, $filetypes['image'])) {
+		$data = attach_image_data_check($data);
+		$data === FALSE AND message(-1, lang('data_malformation'));
+	}
+
 	$tmpanme = $uid.'_'.xn_rand(15).'.'.$ext;
 	$tmpfile = $conf['upload_path'].'tmp/'.$tmpanme;
 	$tmpurl = $conf['upload_url'].'tmp/'.$tmpanme;

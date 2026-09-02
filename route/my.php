@@ -102,7 +102,11 @@ if(empty($action)) {
 		$data = base64_decode_file_data($data);
 		$size = strlen($data);
 		$size > 40000 AND message(-1, lang('filesize_too_large', array('maxsize'=>'40K', 'size'=>$size)));
-		
+
+		// 头像落盘前按内容校验（客户端 canvas 可能提交 jpeg/gif 字节，文件名固定 png，浏览器按内容嗅探渲染）
+		$data = attach_image_data_check($data);
+		$data === FALSE AND message(-1, lang('data_malformation'));
+
 		$filename = "$uid.png";
 		$dir = substr(sprintf("%09d", $uid), 0, 3).'/';
 		$path = $conf['upload_path'].'avatar/'.$dir;

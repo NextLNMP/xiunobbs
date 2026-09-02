@@ -37,6 +37,7 @@ if(empty($action) || $action == 'list') {
 		
 		$arrlist = array();
 		foreach($fidarr as $k=>$v) {
+			$k = intval($k); // fid 用于拼接文件路径，强制为整数
 			$arr = array(
 				'fid'=>$k,
 				'name'=>array_value($namearr, $k),
@@ -52,15 +53,21 @@ if(empty($action) || $action == 'list') {
 			}
 			// icon
 			if(!empty($iconarr[$k])) {
-				
+
 				$s = array_value($iconarr, $k);
 				$data = substr($s, strpos($s, ',') + 1);
 				$data = base64_decode($data);
-				
-				$iconfile = "../upload/forum/$k.png";
-				file_put_contents($iconfile, $data);
-				
-				forum_update($k, array('icon'=>$time));
+
+				// 仅接受合法图片（按内容嗅探，jpg/gif 也接受，有 gd 时重编码）
+				$data = $data ? attach_image_data_check($data) : FALSE;
+				$data === FALSE AND $data = '';
+
+				if($data) {
+					$iconfile = "../upload/forum/$k.png";
+					file_put_contents($iconfile, $data);
+
+					forum_update($k, array('icon'=>$time));
+				}
 			}
 			
 			// hook admin_forum_list_post_loop_end.php
@@ -129,8 +136,8 @@ if(empty($action) || $action == 'list') {
 		
 		$name = param('name');
 		$rank = param('rank', 0);
-		$brief = param('brief', '', FALSE);
-		$announcement = param('announcement', '', FALSE);
+		$brief = xn_html_safe(param('brief', '', FALSE)); // 允许受限 HTML，入库前过白名单
+		$announcement = xn_html_safe(param('announcement', '', FALSE));
 		$modnames = param('modnames');
 		$accesson = param('accesson', 0);
 		$moduids = user_names_to_ids($modnames);
@@ -205,7 +212,9 @@ if(empty($action) || $action == 'list') {
 	message(0, $s);
 	
 } elseif($action == 'delete') {
-	
+
+	$method != 'POST' AND message(-1, 'Method Error'); // 改状态动作只认 POST
+
 	$_fid = param(2, 0);
 	$_forum = forum_read($_fid);
 	empty($_forum) AND message(-1, lang('forum_not_exists'));

@@ -155,6 +155,43 @@ function attach_type($name, $types) {
     return 'other';
 }
 
+// 图片数据落盘前校验：先验 magic bytes 与后缀是否一致，装了 gd 则重编码；成功返回可落盘的数据，失败返回 FALSE
+// 按内容 magic bytes 识别图片格式；识别失败返回 FALSE。扩展名不可信：浏览器 canvas 会把 bmp/webp 转成 png 提交
+function attach_image_sniff($data) {
+	$head = substr($data, 0, 12);
+	if(substr($head, 0, 4) == "\x89PNG") return 'png';
+	if(substr($head, 0, 3) == "\xFF\xD8\xFF") return 'jpg';
+	if(substr($head, 0, 6) == 'GIF87a' || substr($head, 0, 6) == 'GIF89a') return 'gif';
+	if(substr($head, 0, 4) == 'RIFF' && substr($head, 8, 4) == 'WEBP') return 'webp';
+	if(substr($head, 0, 2) == 'BM') return 'bmp';
+	return FALSE;
+}
+
+// 图片数据校验：png/jpg/bmp 在有 gd 时重编码；gif/webp 只验不重编码，避免动图丢帧
+function attach_image_data_check($data) {
+	$fmt = attach_image_sniff($data);
+	if($fmt === FALSE) return FALSE;
+	if(!extension_loaded('gd')) return $data;
+	$im = @imagecreatefromstring($data);
+	if($im === FALSE) {
+		// gd 可能未编译 webp 解码器，magic 通过即放行
+		return $fmt == 'webp' ? $data : FALSE;
+	}
+	if($fmt == 'gif' || $fmt == 'webp') {
+		imagedestroy($im);
+		return $data;
+	}
+	$encode = $fmt == 'jpg' ? 'imagejpeg' : ($fmt == 'bmp' && function_exists('imagebmp') ? 'imagebmp' : 'imagepng');
+	$encode != 'imagejpeg' AND imagealphablending($im, FALSE);
+	$encode != 'imagejpeg' AND imagesavealpha($im, TRUE);
+	ob_start();
+	$r = $encode($im);
+	$out = ob_get_clean();
+	imagedestroy($im);
+	if(!$r || $out == '') return FALSE;
+	return $out;
+}
+
 // 扫描垃圾的附件，每日清理一次
 function attach_gc() {
     global $time, $conf;
@@ -177,10 +214,6 @@ function attach_assoc_post($pid) {
     $sess_tmp_files = _SESSION('tmp_files');
     //if(empty($tmp_files)) return;
 
-    if(!$sess_tmp_files && preg_match('/tmp\+files\|(a\:1\:\{.*\})/',_SESSION('data'),$arr)) {
-        $sess_tmp_files = unserialize(str_replace(array('+','='),array('_','.'),$arr['1']));
-    }
-    
     $post = post__read($pid);
     if(empty($post)) return;
     

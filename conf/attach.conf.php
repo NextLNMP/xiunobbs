@@ -1,7 +1,7 @@
 <?php
 
 return array (
-	'all'=> array('av','wmv','wav','wma','avi','mp4', 'mp3','exe','bin','swf','fla','as','gif','jpg','jpeg','png','bmp','webp','doc','xls','ppt','docx','xlsx','pptx','pdf',
+	'all'=> array('av','wmv','wav','wma','avi','mp4', 'mp3','gif','jpg','jpeg','png','bmp','webp','doc','xls','ppt','docx','xlsx','pptx','pdf',
 		'c','cpp','cc', 'txt','tar','zip','gz','rar','7z','bz','chm','bt','torrent','ttf','font','fon'
 	),
 	'video' => array('av','wmv','wav','wma','avi','mp4'),

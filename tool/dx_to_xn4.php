@@ -1,5 +1,7 @@
 <?php
 
+php_sapi_name() != 'cli' AND exit('cli only');
+
 /*
 	功能：本程序用于将 DiscuzX 转换到 xn4
 	步骤：

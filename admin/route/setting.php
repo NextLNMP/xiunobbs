@@ -37,8 +37,8 @@ if($action == 'base') {
 		
 	} else {
 		
-		$sitebrief = param('sitebrief', '', FALSE);
-		$sitename = param('sitename', '', FALSE);
+		$sitebrief = xn_html_safe(param('sitebrief', '', FALSE)); // 首页简介允许受限 HTML，入库过白名单
+		$sitename = param('sitename', '');
 		$runlevel = param('runlevel', 0);
 		$user_create_on = param('user_create_on', 0);
 		$user_create_email_on = param('user_create_email_on', 0);
