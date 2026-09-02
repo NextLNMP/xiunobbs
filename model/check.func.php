@@ -21,7 +21,7 @@ function is_mobile($mobile, &$err) {
 function is_email($email, &$err) {
 	// hook model_is_email_start.php
 	$len = mb_strlen($email, 'UTF-8');
-	if(strlen($len) > 32) {
+	if($len > 40) { // 上限对齐 user.email char(40)，收窄会锁死存量长邮箱用户
 		$err = lang('email_too_long', array('length'=>$len));
 		return FALSE;
 	} elseif(!preg_match('/^[\w\-\.]+@[\w\-\.]+(\.\w+)+$/i', $email)) {

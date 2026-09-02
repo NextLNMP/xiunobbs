@@ -73,18 +73,45 @@ if(empty($action)) {
 		$email = param('email');			// 邮箱或者手机号 / email or mobile
 		$password = param('password');
 		empty($email) AND message('email', lang('email_is_empty'));
+
+		// 登录失败限流：同一用户名+IP 15 分钟内失败 10 次拒绝登录
+		$loginfail_file = APP_PATH.'tmp/loginfail_'.md5($email.$longip).'.txt';
+		$loginfail = 0;
+		$loginfail_start = $time;
+		if(is_file($loginfail_file)) {
+			$arr = explode("\t", file_get_contents($loginfail_file));
+			// 超过 15 分钟窗口重置计数并回收文件
+			if(isset($arr[1]) && $time - intval($arr[1]) < 900) {
+				$loginfail = intval($arr[0]);
+				$loginfail_start = intval($arr[1]);
+			} else {
+				unlink($loginfail_file);
+			}
+		}
+		$loginfail >= 10 AND message(-1, '登录失败次数过多，请 15 分钟后再试');
+		// 低概率顺手回收过期的限流小文件，防 tmp/ 无限增长（GLOB_BRACE 部分系统不可用）
+		if(random_int(0, 49) == 0) {
+			$_files = array_merge((array)glob(APP_PATH.'tmp/loginfail_*.txt'), (array)glob(APP_PATH.'tmp/sendcode_*.txt'), (array)glob(APP_PATH.'tmp/sendcodeip_*.txt'));
+			foreach($_files as $_f) {
+				$_f && $time - filemtime($_f) > 3600 AND unlink($_f);
+			}
+		}
+
 		if(is_email($email, $err)) {
 			$_user = user_read_by_email($email);
-			empty($_user) AND message('email', lang('email_not_exists'));
 		} else {
 			$_user = user_read_by_username($email);
-			empty($_user) AND message('email', lang('username_not_exists'));
 		}
 
 		!is_password($password, $err) AND message('password', $err);
-		$check = (md5($password.$_user['salt']) == $_user['password']);
+		// 用户不存在与密码错误返回同一报错，避免用户名枚举
+		$check = !empty($_user) && (md5($password.$_user['salt']) == $_user['password']);
 		// hook user_login_post_password_check_after.php
-		!$check AND message('password', lang('password_incorrect'));
+		if(!$check) {
+			file_put_contents($loginfail_file, ($loginfail + 1)."\t".$loginfail_start);
+			message('password', lang('password_incorrect'));
+		}
+		is_file($loginfail_file) AND unlink($loginfail_file);
 
 		// 更新登录时间和次数
 		// update login times
@@ -233,10 +260,22 @@ if(empty($action)) {
 
 		$sess_email = _SESSION('user_resetpw_email');
 		$sess_code = _SESSION('user_resetpw_code');
+		$sess_code_time = intval(_SESSION('user_resetpw_code_time'));
+		$sess_code_tries = intval(_SESSION('user_resetpw_code_tries'));
 		empty($sess_code) AND message('code', lang('click_to_get_verify_code'));
 		empty($sess_email) AND message('code', lang('click_to_get_verify_code'));
-		$email != $sess_email AND message('code', lang('verify_code_incorrect'));
-		$code != $sess_code AND message('code', lang('verify_code_incorrect'));
+		// 验证码 10 分钟过期、错 5 次作废，须重新发码
+		if($time - $sess_code_time > 600 || $sess_code_tries >= 5) {
+			unset($_SESSION['user_resetpw_email']);
+			unset($_SESSION['user_resetpw_code']);
+			unset($_SESSION['user_resetpw_code_time']);
+			unset($_SESSION['user_resetpw_code_tries']);
+			message('code', lang('click_to_get_verify_code'));
+		}
+		if($email != $sess_email || $code != $sess_code) {
+			$_SESSION['user_resetpw_code_tries'] = $sess_code_tries + 1;
+			message('code', lang('verify_code_incorrect'));
+		}
 
 		$_SESSION['resetpw_verify_email'] = $sess_email;
 
@@ -277,15 +316,19 @@ if(empty($action)) {
 
 		$password = param('password');
 		empty($password) AND message('password', lang('please_input_password'));
+		// 先校验原始口令，再加盐入库
+		!is_password($password, $err) AND message('password', $err);
 
 		$salt = $_user['salt'];
 		$password = md5($password.$salt);
 
-		!is_password($password, $err) AND message('password', $err);
 		user_update($_uid, array('password'=>$password));
 
 		unset($_SESSION['user_resetpw_email']);
 		unset($_SESSION['user_resetpw_code']);
+		unset($_SESSION['user_resetpw_code_time']);
+		unset($_SESSION['user_resetpw_code_tries']);
+		unset($_SESSION['resetpw_verify_email']);
 		unset($_SESSION['resetpw_verify_ok']);
 
 		// hook user_resetpw_post_end.php
@@ -314,7 +357,7 @@ if(empty($action)) {
 		$_user = user_read_by_email($email);
 		!empty($_user) AND message('email', lang('email_is_in_use'));
 
-		$code = rand(100000, 999999);
+		$code = random_int(100000, 999999);
 		$_SESSION['user_create_email'] = $email;
 		$_SESSION['user_create_code'] = $code;
 
@@ -331,19 +374,45 @@ if(empty($action)) {
 
 		empty($conf['user_resetpw_on']) AND message(-1, lang('resetpw_not_on'));
 
-		$code = rand(100000, 999999);
+		// 同会话发码间隔 60 秒
+		$sess_code_time = intval(_SESSION('user_resetpw_code_time'));
+		$time - $sess_code_time < 60 AND message(-1, '发送太频繁，请 60 秒后重试');
+
+		$code = random_int(100000, 999999);
 		$_SESSION['user_resetpw_email'] = $email;
 		$_SESSION['user_resetpw_code'] = $code;
+		$_SESSION['user_resetpw_code_time'] = $time;
+		$_SESSION['user_resetpw_code_tries'] = 0;
 
 	} else {
 		message(-1, 'action2 error');
 	}
 
 
+	// 发码限频存服务端，session 侧限频可被换会话绕过：单邮箱 60 秒一封，单 IP 每小时 15 封
+	$sendmail_file = APP_PATH.'tmp/sendcode_'.md5($email).'.txt';
+	$sendip_file = APP_PATH.'tmp/sendcodeip_'.md5($longip).'.txt';
+	is_file($sendmail_file) && $time - intval(file_get_contents($sendmail_file)) < 60 AND message(-1, '发送太频繁，请 60 秒后重试');
+	$sendip_n = 0;
+	$sendip_start = $time;
+	if(is_file($sendip_file)) {
+		$arr = explode("\t", file_get_contents($sendip_file));
+		if(isset($arr[1]) && $time - intval($arr[1]) < 3600) {
+			$sendip_n = intval($arr[0]);
+			$sendip_start = intval($arr[1]);
+		}
+	}
+	$sendip_n >= 15 AND message(-1, '发送太频繁，请稍后重试');
+	file_put_contents($sendmail_file, $time);
+	file_put_contents($sendip_file, ($sendip_n + 1)."\t".$sendip_start);
+
 	$subject = lang('send_code_template', array('rand'=>$code, 'sitename'=>$conf['sitename']));
 	$message = $subject;
 
-	$smtplist = include _include(APP_PATH.'conf/smtp.conf.php');
+	$smtpfile = APP_PATH.'conf/smtp.conf.php';
+	!is_file($smtpfile) AND $smtpfile = APP_PATH.'conf/smtp.conf.default.php';
+	$smtplist = include $smtpfile; // 纯配置无 hook，不走 _include 的 tmp 缓存
+	(!is_array($smtplist) || empty($smtplist)) AND message(-1, '站点未配置 SMTP，无法发送验证码');
 	$n = array_rand($smtplist);
 	$smtp = $smtplist[$n];
 
@@ -395,7 +464,15 @@ if(empty($action)) {
 		$s = xn_encrypt($s);
 
 		// 将 token 附加到 URL，跳转回去 | add token into URL, jump back
-		$url = xn_urldecode($return_url).'?token='.$s;
+		// return_url 只允许站内相对路径，防止开放跳转 | only allow relative path
+		$return_url = xn_urldecode($return_url);
+		$safe = preg_match('#^[a-zA-Z/]#', $return_url)
+			&& substr($return_url, 0, 2) != '//'
+			&& strpos($return_url, '://') === FALSE
+			&& strpos($return_url, '\\') === FALSE
+			&& !preg_match('#^[a-zA-Z][a-zA-Z0-9+.\-]*:#', $return_url);
+		!$safe AND $return_url = './';
+		$url = $return_url.'?token='.$s;
 		//$url = xn_url_add_arg($return_url, 'token', $s);
 		http_location($url);
 	}

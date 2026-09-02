@@ -24,12 +24,31 @@ if($action == 'login') {
 		
 		$password = param('password');
 
+		// 登录失败限流：同一用户名+IP 15 分钟内失败 10 次拒绝登录
+		$loginfail_file = APP_PATH.'tmp/loginfail_'.md5($user['username'].$longip).'.txt';
+		$loginfail = 0;
+		$loginfail_start = $time;
+		if(is_file($loginfail_file)) {
+			$arr = explode("\t", file_get_contents($loginfail_file));
+			// 超过 15 分钟窗口重置计数并回收文件
+			if(isset($arr[1]) && $time - intval($arr[1]) < 900) {
+				$loginfail = intval($arr[0]);
+				$loginfail_start = intval($arr[1]);
+			} else {
+				unlink($loginfail_file);
+			}
+		}
+		$loginfail >= 10 AND message(-1, '登录失败次数过多，请 15 分钟后再试');
+
 		if(md5($password.$user['salt']) != $user['password']) {
-			xn_log('password error. uid:'.$user['uid'].' - ******'.substr($password, -6), 'admin_login_error');
+			file_put_contents($loginfail_file, ($loginfail + 1)."\t".$loginfail_start);
+			xn_log('password error. uid:'.$user['uid'].' ip:'.$longip, 'admin_login_error');
 			message('password', lang('password_incorrect'));
 		}
 
 		admin_token_set();
+
+		is_file($loginfail_file) AND unlink($loginfail_file);
 
 		xn_log('login successed. uid:'.$user['uid'], 'admin_login');
 
