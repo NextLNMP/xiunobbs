@@ -14,7 +14,7 @@ Xiuno BBS 4.0 以 MIT 协议发布，允许自由修改、派生与商用。本�
 
 ## 仓库结构
 
-- `v4.0.4` 标签：官方最终版原始基线，原封不动，用于存档与考古
+- `v4.0.4` 标签：基线存档。来源是关站后社区流传的修补包，经审计无恶意代码；真正的官方原版以 Wayback 存档为准（official zip md5 `a0309a0beb3aa3f5f6d69d8bd2eb1b9c`，2020-06-17 bbs.xiuno.com 存档）
 - `main` 分支：社区延续版主线
 - `v5.0-dev` 分支：5.0 开发线
 - `README-original.md`：老黄的原版说明，完整保留
@@ -23,10 +23,10 @@ Xiuno BBS 4.0 以 MIT 协议发布，允许自由修改、派生与商用。本�
 
 ### Phase 1 · 经典复活（v5.0-alpha）✅ 已完成
 
-- PHP 8 全兼容（8.3 实测全链路，8.4 静态清零），mysql_* 驱动整体移植 mysqli
+- PHP 8 兼容（8.3 实测全链路；8.4 默认 mysql/pdo_mysql 路径静态扫描无致命点），mysql_* 驱动整体移植 mysqli
 - 数据库字符集升级 utf8mb4，原生支持 emoji
 - 安全审计，`eval` 使用点逐一复查
-- 原味 UI 保留，17 张表结构不动，存量老站无损升级
+- 原味 UI 保留，17 张表与社区基线同构，两处主动调整：uid=2 预置账号（种子数据）密码与邮箱置空不可登录，session.useragent 由 text（官方原版为 char(128)）收敛为 varchar(500)。存量老站升级需按 install/upgrade 脚本注释操作并修改 conf.php 字符集
 
 ### Phase 2 · 时代层（v5.0）
 
@@ -60,11 +60,11 @@ MIT 协议延续，老黄的原始版权信息完整保留于 `LICENSE.txt`，�
 
 In July 2020 the author shut everything down: the official site, the repositories, the plugin market and the ebooks. Released under the MIT license, Xiuno BBS allows free modification, derivation and commercial use. This repository is the community continuation.
 
-**Repository layout**: the `v4.0.4` tag is the untouched final official release, archived for the record; `main` is the continuation line; `v5.0-dev` is where 5.0 happens; the original README is preserved as `README-original.md`.
+**Repository layout**: the `v4.0.4` tag is the archived baseline. It comes from a community-circulated patched package that spread after the shutdown, audited and found free of malicious code; the authoritative official release is the Wayback archive (official zip md5 `a0309a0beb3aa3f5f6d69d8bd2eb1b9c`, bbs.xiuno.com snapshot of 2020-06-17). `main` is the continuation line; `v5.0-dev` is where 5.0 happens; the original README is preserved as `README-original.md`.
 
 **Roadmap**:
 
-- **Phase 1, Classic Revival (v5.0-alpha)** ✅ shipped: full PHP 8.4+ compatibility, utf8mb4 with emoji support, security audit of every `eval` call, original UI preserved, schema untouched so existing sites upgrade losslessly.
+- **Phase 1, Classic Revival (v5.0-alpha)** ✅ shipped: PHP 8 compatibility (full stack tested on 8.3; on 8.4 the default mysql/pdo_mysql paths show no fatal issues under static scanning), utf8mb4 with emoji support, security audit of every `eval` call, original UI preserved. The 17 tables keep the community-baseline structure with two deliberate adjustments: the preset uid=2 account (seed data) now ships with empty password and email so it cannot log in, and session.useragent is narrowed from text (char(128) in the official release) to varchar(500). Existing sites upgrade by following the notes in the install/upgrade script and changing the charset in conf.php.
 - **Phase 2, The AI Era Layer (v5.0)**, implemented purely as plugins with zero core intrusion: an **MCP interface** so AI agents can read, post and moderate; an **I-Lang output layer** making every thread natively machine-readable ([ilang.ai](https://ilang.ai)); an **AI moderation plugin**; and a **SQLite mode** activating the built-in `db_pdo_sqlite` driver for zero-dependency single-box deployment.
 
 **Design law**: the core stays true to the Xiuno philosophy, light, fast, no fat. Everything new ships as a plugin, because the plugin system is the soul of Xiuno.

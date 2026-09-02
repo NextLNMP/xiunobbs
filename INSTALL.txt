@@ -11,4 +11,11 @@
 5. 访问 http://www.domain.com/install/, 根据提示安装。
 6. 删除 install 目录
 
+【生产部署安全清单】
+
+1. 删除 install/ 与 tool/ 目录
+2. Nginx 按 deploy/nginx-hardening.conf.example 配置：拒绝访问 install/ tool/ log/ tmp/ conf/，禁止 upload/ 下执行 PHP
+3. 建议启用 php-gd 扩展：上传图片校验在无 gd 时降级为仅文件头校验
+4. 反代/CDN 后部署：透传 Host 与 X-Forwarded-Proto（详见样板尾注），否则 POST 同源校验与 cookie Secure 标志会失效
+
 【完】

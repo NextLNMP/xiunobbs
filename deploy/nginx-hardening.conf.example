@@ -1,0 +1,21 @@
+# Xiuno BBS 生产部署硬化样板，放入 server{} 块内
+# 敏感目录一律拒绝访问；正式部署直接删除 install/ 与 tool/ 更稳
+# ^~ 前缀匹配命中后跳过所有正则 location，与书写位置无关，不会被站点已有的 php location 抢走
+
+location ^~ /install/ { deny all; }
+location ^~ /tool/    { deny all; }
+location ^~ /log/     { deny all; }
+location ^~ /tmp/     { deny all; }
+location ^~ /conf/    { deny all; }
+
+# upload/ 只存用户上传文件：整目录只走静态，其中任何 .php 一律拒绝
+# 嵌套正则同时封死 /upload/x.php 与 /upload/x.php/y.jpg 这类 PATH_INFO 绕过
+# nosniff 禁止浏览器把上传内容嗅探成 HTML/脚本
+location ^~ /upload/ {
+	add_header X-Content-Type-Options nosniff;
+	location ~* \.php(/|$) { deny all; }
+}
+
+# 反代/CDN 注意：
+# 1. 必须原样透传 Host 头（proxy_set_header Host $host），否则 POST 的同源校验会拒绝所有请求
+# 2. TLS 在边缘终结时透传 X-Forwarded-Proto，认证 cookie 的 Secure 标志依赖它
