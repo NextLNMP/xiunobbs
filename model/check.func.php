@@ -41,9 +41,10 @@ function is_username($username, &$err = '') {
 	} elseif(strpos($username, ' ') !== FALSE || strpos($username, '　') !== FALSE) {
 		$err = lang('username_cant_include_cn_space');
 		return FALSE;
-	} elseif(!preg_match('#^[\w\x{4E00}-\x{9FA5}\x{1100}-\x{11FF}\x{3130}-\x{318F}\x{AC00}-\x{D7AF}]+$#u', $username)) {
+	} elseif(!preg_match('#^[\w\x{4E00}-\x{9FA5}\x{1100}-\x{11FF}\x{3130}-\x{318F}\x{AC00}-\x{D7AF}](?:[\w.\-\x{4E00}-\x{9FA5}\x{1100}-\x{11FF}\x{3130}-\x{318F}\x{AC00}-\x{D7AF}]*[\w\x{4E00}-\x{9FA5}\x{1100}-\x{11FF}\x{3130}-\x{318F}\x{AC00}-\x{D7AF}])?$#u', $username)) {
 		// 4E00-9FA5(中文)  1100-11FF(朝鲜文) 3130-318F(朝鲜文兼容字母) AC00-D7AF(朝鲜文音节)
 		// 4E00-9FA5(chinese)  1100-11FF(korea) 3130-318F(korea compatiable word) AC00-D7AF(korea)
+		// 允许中间出现点与连字符（站点名式用户名），但不能出现在首尾
 		$err = lang('username_format_mismatch');
 		return FALSE;
 	}
