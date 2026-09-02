@@ -540,6 +540,7 @@ function ip() {
 			$ip = $_SERVER['HTTP_CLIENT_IP'];
 		} elseif(isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
 			$ip = $_SERVER['HTTP_X_FORWARDED_FOR'];
+			// X-Forwarded-For: client, proxy1, proxy2...，前面的都可伪造，只取 CDN 追加的最后一个
 			$arr = array_filter(explode(',', $ip));
 			$ip = trim(end($arr));
 		} else {
@@ -1031,6 +1032,13 @@ function file_name($path) {
 }*/
 
 // 获取 http://xxx.com/path/
+// 判定是否 https，口径与 http_url_path 一致：TLS 在反代/CDN 终结时认 X-Forwarded-Proto
+function xn_is_https() {
+	$https = strtolower(_SERVER('HTTPS', 'off'));
+	$proto = strtolower(_SERVER('HTTP_X_FORWARDED_PROTO'));
+	return (_SERVER('SERVER_PORT') == 443) || $proto == 'https' || ($https && $https != 'off');
+}
+
 function http_url_path() {
 	$port = _SERVER('SERVER_PORT');
 	//$portadd = ($port == 80 ? '' : ':'.$port);

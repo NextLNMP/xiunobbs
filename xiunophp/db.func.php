@@ -8,7 +8,19 @@ function db_new($dbconf) {
 		//print_r($dbconf);
 		// 代码不仅仅是给人看的，更重要的是给编译器分析的，不要玩 $db = new $dbclass()，那样不利于优化和 opcache 。
 		switch ($dbconf['type']) {
-			case 'mysql':      $db = function_exists('mysqli_connect') ? new db_mysql($dbconf['mysql']) : new db_pdo_mysql($dbconf['mysql']); break; // db_mysql 已移植 mysqli; 无 mysqli 时回退 PDO, 老站配置无损 (Xiuno BBS 5.0)
+			// db_mysql 已移植 mysqli; 无 mysqli 时回退 PDO, 老站配置无损 (Xiuno BBS 5.0)
+			case 'mysql':
+			case 'mysqli':
+				$conf = isset($dbconf[$dbconf['type']]) ? $dbconf[$dbconf['type']] : $dbconf['mysql'];
+				if(function_exists('mysqli_connect')) {
+					$db = new db_mysql($conf);
+				} elseif(extension_loaded('pdo_mysql')) {
+					$db = new db_pdo_mysql($conf);
+				} else {
+					// 无任何可用驱动没有继续运行的意义，静默返回 FALSE 会让报错沉没在后续查询里
+					exit('缺少 mysqli 扩展，且无 pdo_mysql 可回退，请安装 php-mysqli');
+				}
+				break;
 			case 'pdo_mysql':  $db = new db_pdo_mysql($dbconf['pdo_mysql']);	break;
 			case 'pdo_sqlite': $db = new db_pdo_sqlite($dbconf['pdo_sqlite']);	break;
 			case 'pdo_mongodb': $db = new db_pdo_mongodb($dbconf['pdo_mongodb']);	break;

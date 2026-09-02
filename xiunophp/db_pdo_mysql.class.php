@@ -51,17 +51,23 @@ class db_pdo_mysql {
 	}
 	
 	public function real_connect($host, $user, $password, $name, $charset = '', $engine = '') {
+		// host:port 与 host:/path/to.sock 两种写法，冒号后以 / 开头视为 unix socket (Xiuno BBS 5.0)
 		if(strpos($host, ':') !== FALSE) {
-			list($host, $port) = explode(':', $host);
+			list($host, $port) = explode(':', $host, 2);
+			if(substr($port, 0, 1) == '/') {
+				$dsn = "mysql:unix_socket=$port;dbname=$name";
+			} else {
+				$dsn = "mysql:host=$host;port=$port;dbname=$name";
+			}
 		} else {
-			$port = 3306;
+			$dsn = "mysql:host=$host;port=3306;dbname=$name";
 		}
 		try {
 			$attr = array(
 				PDO::ATTR_TIMEOUT => 5,
 				PDO::ATTR_ERRMODE => PDO::ERRMODE_SILENT, // PHP 8.0 起 PDO 默认抛异常，恢复 4.x 静默语义 (Xiuno BBS 5.0)
 			);
-			$link = new PDO("mysql:host=$host;port=$port;dbname=$name", $user, $password, $attr);
+			$link = new PDO($dsn, $user, $password, $attr);
 			//$link->setAttribute(PDO::ATTR_TIMEOUT, 5);
 			//$link->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
 		} catch (Exception $e) {
@@ -69,8 +75,14 @@ class db_pdo_mysql {
 			return FALSE;
 	        }
 	        //$link->setFetchMode(PDO::FETCH_ASSOC);
-		$charset AND $link->query("SET names $charset, sql_mode=''");
-		 //$link->query('SET NAMES '.($charset ? $charset.',' : '').', sql_mode=""');  
+		if($charset) {
+			$r = $link->query("SET names $charset, sql_mode=''"); // sql_mode='' 为历史兼容保留，老库结构依赖非严格模式
+			if($r === FALSE) {
+				$e = $link->errorInfo();
+				$this->error(isset($e[1]) ? $e[1] : 0, 'SET names 失败:'.(isset($e[2]) ? $e[2] : ''));
+			}
+		}
+		 //$link->query('SET NAMES '.($charset ? $charset.',' : '').', sql_mode=""');
 		return $link;
 	}
 	

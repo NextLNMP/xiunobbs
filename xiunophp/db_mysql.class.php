@@ -54,18 +54,28 @@ class db_mysql {
 	}
 	
 	public function real_connect($host, $user, $password, $name, $charset = '', $engine = '') {
-		// mysql_connect 原生支持 host:port 写法，mysqli 需要拆开 (Xiuno BBS 5.0)
+		// mysql_connect 原生支持 host:port 与 host:/path/to.sock 写法，mysqli 需要拆开 (Xiuno BBS 5.0)
+		$socket = NULL;
 		if(strpos($host, ':') !== FALSE) {
-			list($host, $port) = explode(':', $host);
-			$port = (int)$port;
+			list($host, $port) = explode(':', $host, 2);
+			if(substr($port, 0, 1) == '/') {
+				$socket = $port;
+				$port = NULL;
+				$host === '' AND $host = 'localhost';
+			} else {
+				$port = (int)$port;
+			}
 		} else {
 			$port = 3306;
 		}
-		$link = @mysqli_connect($host, $user, $password, '', $port);
+		$link = @mysqli_connect($host, $user, $password, '', $port, $socket);
 		if(!$link) { $this->error(mysqli_connect_errno(), '连接数据库服务器失败:'.mysqli_connect_error()); return FALSE; }
 		if(!@mysqli_select_db($link, $name)) { $this->error(mysqli_errno($link), '选择数据库失败:'.mysqli_error($link)); return FALSE; }
 		//strtolower($engine) == 'innodb' AND $this->query("SET innodb_flush_log_at_trx_commit=no", $link);
-		$charset AND $this->query("SET names $charset, sql_mode=''", $link);
+		if($charset) {
+			$r = $this->query("SET names $charset, sql_mode=''", $link); // sql_mode='' 为历史兼容保留，老库结构依赖非严格模式
+			$r === FALSE AND $this->error(mysqli_errno($link), 'SET names 失败:'.mysqli_error($link));
+		}
 		return $link;
 	}
 	public function sql_find_one($sql) {
@@ -190,7 +200,7 @@ class db_mysql {
 	public function close() {
 		$r = FALSE;
 		$this->wlink instanceof mysqli AND $r = mysqli_close($this->wlink);
-		if($this->wlink != $this->rlink) {
+		if($this->wlink !== $this->rlink) {
 			$this->rlink instanceof mysqli AND $r = mysqli_close($this->rlink);
 		}
 		return $r;

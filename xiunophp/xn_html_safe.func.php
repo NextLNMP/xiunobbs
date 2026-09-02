@@ -124,6 +124,12 @@ class XML_HTMLSax3_ClosingTagState {
 */
 class XML_HTMLSax3_OpeningTagState {
     /**
+    * Current tag attributes
+    * @var array
+    * @access private
+    */
+    var $attrs = array();
+    /**
     * Handles attributes
     * @param string attribute name
     * @param string attribute value

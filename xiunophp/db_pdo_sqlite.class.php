@@ -8,6 +8,7 @@ class db_pdo_sqlite {
 	public $link = NULL;   // 最后一次使用的连接
 	public $errno = 0;
 	public $errstr = '';
+	public $sqls = array();
 	public $tablepre = '';
 	
 	public function __construct($conf) {
