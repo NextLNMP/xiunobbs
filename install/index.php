@@ -137,13 +137,16 @@ if(empty($action)) {
         if($r === FALSE) {
             if($errno == 1049 || $errno == 1045) {
                 if($type == 'mysql') {
-                    if(strpos($host, ':') !== FALSE) { list($mhost, $mport) = explode(':', $host); } else { $mhost = $host; $mport = 3306; } $mlink = @mysqli_connect($mhost, $user, $password, '', (int)$mport); if($mlink) { @mysqli_query($mlink, "CREATE DATABASE `$name`"); mysqli_close($mlink); } // mysql_* 已移除，改用 mysqli (Xiuno BBS 5.0)
+                    $msock = NULL; $mhost = $host; $mport = 3306;
+                    if(strpos($host, ':') !== FALSE) { list($mhost, $m2) = explode(':', $host, 2); if(substr($m2, 0, 1) == '/') { $msock = $m2; $mport = NULL; $mhost = $mhost != '' ? $mhost : 'localhost'; } else { $mport = (int)$m2; } } // 与 db_mysql 的 host:/sock 解析对齐
+                    $mlink = @mysqli_connect($mhost, $user, $password, '', $mport, $msock); if($mlink) { @mysqli_query($mlink, "CREATE DATABASE `$name` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci"); mysqli_close($mlink); } // mysql_* 已移除，改用 mysqli (Xiuno BBS 5.0)
                     $r = db_connect($db);
                 } elseif($type == 'pdo_mysql') {
+                    $sock = '';
                     if(strpos($host, ':') !== FALSE) {
-                        $arr = explode(':', $host);
+                        $arr = explode(':', $host, 2);
+                        if(substr($arr[1], 0, 1) == '/') { $sock = $arr[1]; } else { $port = $arr[1]; } // 与 db_pdo_mysql 的 host:/sock 解析对齐
                         $host = $arr[0];
-                        $port = $arr[1];
                     } else {
                         //$host = $host;
                         $port = 3306;
@@ -153,8 +156,9 @@ if(empty($action)) {
                             PDO::ATTR_TIMEOUT => 5,
                             PDO::ATTR_ERRMODE => PDO::ERRMODE_SILENT, // PHP 8.0 起 PDO 默认抛异常，恢复 4.x 静默语义 (Xiuno BBS 5.0)
                         );
-                        $link = new PDO("mysql:host=$host;port=$port", $user, $password, $attr);
-                        $r = $link->exec("CREATE DATABASE `$name`");
+                        $dsn = $sock != '' ? "mysql:unix_socket=$sock" : "mysql:host=$host;port=$port";
+                        $link = new PDO($dsn, $user, $password, $attr);
+                        $r = $link->exec("CREATE DATABASE `$name` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci");
                         if($r === FALSE) {
                             $error = $link->errorInfo();
                             $errno = $error[1];
@@ -193,13 +197,16 @@ if(empty($action)) {
         $password = md5(md5($adminpass).$salt);
         $update = array('username'=>$adminuser, 'email'=>$adminemail, 'password'=>$password, 'salt'=>$salt, 'create_date'=>$time, 'create_ip'=>$longip);
         db_update('user', array('uid'=>1), $update);
-        db_update('user', array('uid'=>2), array('password'=>$password, 'salt'=>$salt, 'create_date'=>$time, 'create_ip'=>$longip));
+        db_update('user', array('uid'=>2), array('password'=>'', 'email'=>'', 'salt'=>$salt, 'create_date'=>$time, 'create_ip'=>$longip)); // 系统通知账号，password 与 email 为空：不可登录、不可走找回密码
 
         $replace = array();
         $replace['db'] = $conf['db'];
         $replace['auth_key'] = xn_rand(64);
         $replace['installed'] = 1;
         file_replace_var(APP_PATH.'conf/conf.php', $replace);
+
+        // smtp 配置从样板播种，发码路径依赖该文件存在
+        !is_file(APP_PATH.'conf/smtp.conf.php') AND copy(APP_PATH.'conf/smtp.conf.default.php', APP_PATH.'conf/smtp.conf.php');
 
         // 处理语言包
         group_update(0, array('name'=>lang('group_0')));

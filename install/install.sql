@@ -29,9 +29,10 @@ CREATE TABLE `bbs_user` (
   UNIQUE KEY username (username),
   UNIQUE KEY email (email),						# 升级的时候可能为空
   KEY gid (gid)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 INSERT INTO `bbs_user` SET uid=1, gid=1, email='admin@admin.com', username='admin',`password`='d98bb50e808918dd45a8d92feafc4fa3',salt='123456';
-INSERT INTO `bbs_user` SET uid=2, gid=101, email='system@admin.com', username='系统',`password`='d98bb50e808918dd45a8d92feafc4fa3',salt='123456';
+# 系统通知账号，password 与 email 为空：不可登录、不可走找回密码
+INSERT INTO `bbs_user` SET uid=2, gid=101, email='', username='系统',`password`='',salt='123456';
 
 # 用户组
 DROP TABLE IF EXISTS `bbs_group`;
@@ -219,7 +220,7 @@ CREATE TABLE bbs_session (
   fid tinyint(3) unsigned NOT NULL default '0',		# 所在的版块
   url char(32) NOT NULL default '',			# 当前访问 url
   ip int(11) unsigned NOT NULL default '0',		# 用户ip
-  useragent text NOT NULL default '',			# 用户浏览器信息
+  useragent varchar(500) NOT NULL default '',		# 用户浏览器信息
   data char(255) NOT NULL default '',			# session 数据，超大数据存入大表。
   bigdata tinyint(1) NOT NULL default '0',		# 是否有大数据。
   last_date int(11) unsigned NOT NULL default '0',	# 上次活动时间

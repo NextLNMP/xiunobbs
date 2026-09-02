@@ -1,5 +1,6 @@
 # runtime artifacts / 运行时产物
 conf/conf.php
+conf/smtp.conf.php
 install/install.lock
 log/*
 !log/.gitkeep
