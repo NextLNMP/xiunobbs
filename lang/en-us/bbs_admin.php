@@ -73,6 +73,8 @@ return array(
 	'sitename'=>'Site Name',
 	'sitebrief'=>'Site Brief',
 	'sitebrief_tips'=>'tops：Support HTML tag, new line use &lt;br&gt;',
+	'sitekeywords'=>'Site Keywords',
+	'sitekeywords_tips'=>'Comma separated. Used as the meta keywords tag on the front page; leave empty to omit the tag.',
 	'runlevel'=>'Site access restrictions',
 	'user_create_on'=>'Enable user register',
 	'user_create_email_on'=>'Open email verification when  user register',

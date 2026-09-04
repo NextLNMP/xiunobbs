@@ -38,7 +38,7 @@ thread_list_access_filter($threadlist, $gid);
 
 // SEO
 $header['title'] = $conf['sitename']; 				// site title
-$header['keywords'] = ''; 					// site keyword
+$header['keywords'] = isset($conf['sitekeywords']) ? $conf['sitekeywords'] : ''; 	// site keyword
 $header['description'] = $conf['sitebrief']; 			// site description
 $_SESSION['fid'] = 0;
 

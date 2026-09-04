@@ -73,6 +73,8 @@ return array(
 	'sitename'=>'站点名称',
 	'sitebrief'=>'站点介绍',
 	'sitebrief_tips'=>'注：支持 HTML 标签，换行请使用 &lt;br&gt;',
+	'sitekeywords'=>'站点关键词',
+	'sitekeywords_tips'=>'注：英文逗号分隔，用于首页 meta keywords，留空则不输出该标签',
 	'runlevel'=>'站点访问限制',
 	'user_create_on'=>'开启用户注册',
 	'user_create_email_on'=>'开启注册邮箱验证',

@@ -35,8 +35,9 @@ if($thread_list_from_default) {
 $header['title'] = $forum['seo_title'] ? $forum['seo_title'] : $forum['name'].'-'.$conf['sitename'];
 $header['mobile_title'] = $forum['name'];
 $header['mobile_link'] = url("forum-$fid");
-$header['keywords'] = '';
-$header['description'] = $forum['brief'];
+// 版块名 + 站点关键词，让抓取方知道本页主题
+$header['keywords'] = $forum['name'].(empty($conf['sitekeywords']) ? '' : ','.$conf['sitekeywords']);
+$header['description'] = $forum['brief'] ? $forum['brief'] : $forum['name'].' - '.$conf['sitebrief'];
 
 $_SESSION['fid'] = $fid;
 

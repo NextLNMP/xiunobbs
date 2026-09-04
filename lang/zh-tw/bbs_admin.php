@@ -73,6 +73,8 @@ return array(
 	'sitename'=>'站點名稱',
 	'sitebrief'=>'站點介紹',
 	'sitebrief_tips'=>'註：支持 HTML 標簽，換行請使用 &lt;br&gt;',
+	'sitekeywords'=>'站點關鍵詞',
+	'sitekeywords_tips'=>'注：英文逗號分隔，用於首頁 meta keywords，留空則不輸出該標籤',
 	'runlevel'=>'站點訪問限制',
 	'user_create_on'=>'开启用户注册',
 	'user_create_email_on'=>'開啟註冊郵箱驗證',

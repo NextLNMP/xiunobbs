@@ -77,6 +77,7 @@ return array (
 	
 	'sitename' => 'Xiuno BBS',
 	'sitebrief' => 'Site Brief',
+	'sitekeywords' => '',
 	'timezone' => 'Asia/Shanghai',	// 时区，默认中国
 	'lang' => 'zh-cn',
 	'runlevel' => 5,		// 0: 站点关闭; 1: 管理员可读写; 2: 会员可读;  3: 会员可读写; 4：所有人只读; 5: 所有人可读写

@@ -130,7 +130,8 @@ if($action == 'create') {
 	//$header['mobile_title'] = lang('thread_detail');
 	$header['mobile_title'] = $forum['name'];;
 	$header['mobile_link'] = url("forum-$fid");
-	$header['keywords'] = ''; 
+	// 帖子标题 + 版块名，抓取方与 AI 摘要据此判断本页主题
+	$header['keywords'] = $thread['subject'].','.$forum['name'].(empty($conf['sitekeywords']) ? '' : ','.$conf['sitekeywords']);
 	$header['description'] = $thread['subject'];
 	$_SESSION['fid'] = $fid;
 	
